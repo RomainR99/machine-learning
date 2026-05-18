@@ -7,7 +7,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 # Chemin par défaut du jeu de données bien-être
-DEFAULT_CSV_PATH = "projet de fin de module 2024-2025/bienetre.csv"
+DEFAULT_CSV_PATH = "projet de fin de module 2025-2026/bienetre.csv"
 
 
 def load_data(csv_path, target_col="target"):

@@ -8,6 +8,6 @@ def load_data(csv_path, target_col="target"):
     return X, Y
 
 if __name__ == "__main__":
-    X, Y = load_data(csv_path="projet de fin de module 2024-2025/bienetre.csv", target_col="target")
+    X, Y = load_data(csv_path="projet de fin de module 2025-2026/bienetre.csv", target_col="target")
     print(X.head())
     print(Y.head())

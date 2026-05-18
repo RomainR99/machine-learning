@@ -7,7 +7,7 @@ from sklearn.preprocessing import StandardScaler
 
 from main import load_data
 
-CSV_PATH = "projet de fin de module 2024-2025/bienetre.csv"
+CSV_PATH = "projet de fin de module 2025-2026/bienetre.csv"
 
 
 def test_load_data():

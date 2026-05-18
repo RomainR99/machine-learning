@@ -61,7 +61,7 @@ machine-learning/
 ├── requirements.txt        # pandas, scikit-learn, pytest, …
 ├── README.md
 ├── .vscode/settings.json   # interpréteur Python du venv (optionnel)
-└── projet de fin de module 2024-2025/
+└── projet de fin de module 2025-2026/
     └── bienetre.csv        # Jeu de données (non versionné)
 ```
 
@@ -106,7 +106,7 @@ pytest -v
 pytest -v tests/test_main.py::test_load_data
 ```
 
-Prérequis : le fichier `projet de fin de module 2024-2025/bienetre.csv` doit être présent localement (non versionné sur Git).
+Prérequis : le fichier `projet de fin de module 2025-2026/bienetre.csv` doit être présent localement (non versionné sur Git).
 
 ### Sortie attendue
 
@@ -133,7 +133,7 @@ tests/test_main.py::test_accuracy PASSED
 
 ```python
 def test_load_data():
-    df, X, y = load_data("projet de fin de module 2024-2025/bienetre.csv")
+    df, X, y = load_data("projet de fin de module 2025-2026/bienetre.csv")
 
     assert df is not None
     assert X.shape[0] == y.shape[0]
@@ -148,7 +148,7 @@ Si `target` reste dans `X`, le modèle « triche » en voyant la réponse pendan
 
 ```python
 def test_target_not_in_features():
-    _, X, _ = load_data("projet de fin de module 2024-2025/bienetre.csv")
+    _, X, _ = load_data("projet de fin de module 2025-2026/bienetre.csv")
 
     assert "target" not in X.columns
 ```
@@ -161,7 +161,7 @@ Détecte un CSV corrompu, une colonne cible renommée ou des classes inattendues
 
 ```python
 def test_target_classes():
-    _, _, y = load_data("projet de fin de module 2024-2025/bienetre.csv")
+    _, _, y = load_data("projet de fin de module 2025-2026/bienetre.csv")
 
     assert set(y.unique()) == {0, 1, 2}
 ```
