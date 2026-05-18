@@ -38,7 +38,13 @@ pytest -v           # 6 tests unitaires
 - [Explication rapide](#explication-rapide)
   - [`load_data`](#load_data)
   - [train_test_split](#train_test_split)
-  - [StandardScaler](#standardscaler)
+  - [Normalisation et StandardScaler](#normalisation-et-standardscaler)
+    - [Pourquoi normaliser ?](#pourquoi-normaliser-)
+    - [Ce que fait StandardScaler](#ce-que-fait-standardscaler)
+    - [Qu'est-ce qui est normalisé ?](#quest-ce-qui-est-normalisé-)
+    - [Pourquoi le pipeline est important](#pourquoi-le-pipeline-est-important)
+    - [Ordre des étapes dans le pipeline](#ordre-des-étapes-dans-le-pipeline)
+    - [Algorithmes et normalisation](#algorithmes-et-normalisation)
   - [KNeighborsClassifier](#kneighborsclassifier)
   - [accuracy_score](#accuracy_score)
   - [classification_report](#classification_report)
@@ -276,19 +282,111 @@ Ici :
 - 80% entraînement,
 - 20% test.
 
-### StandardScaler
+### Normalisation et StandardScaler
 
-Très important pour KNN.
+La normalisation est **indispensable pour KNN**. Dans ce projet, elle est assurée par `StandardScaler` à l'intérieur d'un `Pipeline` scikit-learn.
 
-Il normalise les variables :
+#### Pourquoi normaliser ?
 
-- âge : 20-80
-- revenu : 1000-5000
-- stress : 1-10
+Parce que KNN utilise des **distances** entre les points. Avec la distance euclidienne :
 
-Sinon :
+\[
+d(x, y) = \sqrt{\sum_{i=1}^{n} (x_i - y_i)^2}
+\]
 
-- les grandes valeurs dominent la distance.
+Sans normalisation, les variables aux **grandes valeurs** pèsent beaucoup plus lourd dans la somme.
+
+| Variable | Ordre de grandeur | Impact sur la distance |
+|----------|-------------------|-------------------------|
+| `revenu` | 1 000 – 5 000 | Très fort |
+| `age` | 20 – 80 | Moyen |
+| `stress` | 1 – 10 | Faible |
+
+Résultat : le modèle se base surtout sur `revenu` et ignore presque `stress`, même si les deux sont utiles pour prédire `target`.
+
+#### Ce que fait StandardScaler
+
+Il transforme **chaque colonne** de `X` pour obtenir :
+
+- **moyenne = 0**
+- **écart-type = 1**
+
+Formule (pour chaque feature) :
+
+\[
+x_{\text{scaled}} = \frac{x - \mu}{\sigma}
+\]
+
+Toutes les variables passent alors sur une échelle comparable : le KNN compare des distances **équitables**.
+
+#### Qu'est-ce qui est normalisé ?
+
+**Oui — toutes les colonnes de `X` :**
+
+- `age`, `taille`, `poids`, `revenu`, `stress`, `activite`, `sante`, etc. (20 features au total)
+
+**Non — jamais la cible :**
+
+- `target` (dans `y`) n'est **pas** normalisée : ce sont des classes (0, 1, 2), pas des variables continues à mettre à la même échelle.
+
+```python
+X = df.drop(columns=["target"])   # → normalisé par le scaler
+y = df["target"]                  # → jamais passé dans StandardScaler
+```
+
+#### Pourquoi le pipeline est important
+
+Le `Pipeline` de scikit-learn enchaîne les étapes et garantit :
+
+| Règle | Pourquoi |
+|-------|----------|
+| Le scaler est appris **uniquement sur le train** | Évite de « voir » le test pendant l'apprentissage |
+| La **même** transformation est appliquée au test | Cohérence entre entraînement et prédiction |
+| Pas de fuite de données (*data leak*) | Les statistiques (moyenne, écart-type) du test ne contaminent pas le train |
+
+Dans `main.py` :
+
+```python
+model = Pipeline([
+    ("scaler", StandardScaler()),
+    ("knn", KNeighborsClassifier(n_neighbors=5, p=2, metric="minkowski")),
+])
+model.fit(X_train, y_train)      # fit scaler + KNN sur le train seulement
+y_pred = model.predict(X_test)   # transforme X_test avec le scaler du train, puis prédit
+```
+
+#### Ordre des étapes dans le pipeline
+
+L'ordre dans `main.py` est **correct** :
+
+```python
+("scaler", StandardScaler()),
+("knn", KNeighborsClassifier()),
+```
+
+1. **D'abord** le scaler normalise les données.
+2. **Ensuite** le KNN calcule les distances sur des features à la même échelle.
+
+Si l'ordre était inversé :
+
+```python
+("knn", KNeighborsClassifier()),   # ❌ incorrect
+("scaler", StandardScaler()),
+```
+
+le KNN utiliserait des **distances fausses** (variables non normalisées), puis le scaler n'aurait plus de sens pour la classification.
+
+#### Algorithmes et normalisation
+
+| Normalisation **recommandée** | Normalisation **souvent optionnelle** |
+|------------------------------|--------------------------------------|
+| KNN | Random Forest |
+| K-Means | XGBoost |
+| SVM | Arbres de décision |
+| PCA | |
+| Réseaux de neurones | |
+
+**Règle pratique :** si l'algorithme repose sur des **distances** ou des **gradients**, normaliser. Si ce sont des **seuils** sur chaque feature (arbres), c'est moins critique.
 
 ### KNeighborsClassifier
 
