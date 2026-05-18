@@ -81,9 +81,111 @@ Affiche :
 
 Très utilisé en ML.
 
+### Corrélation
+
+La corrélation est calculée ici :
+
+```python
+print("\nCorrélation avec target :")
+print(df.corr()["target"].sort_values(ascending=False))
+```
+
+Plus précisément :
+
+- `df.corr()`
+
+calcule la corrélation entre toutes les colonnes numériques.
+
+Puis :
+
+- `["target"]`
+
+récupère seulement la corrélation de chaque colonne avec target.
+
+Puis :
+
+- `.sort_values(ascending=False)`
+
+classe les résultats du plus corrélé au moins corrélé.
+
+Donc par exemple :
+
+- `risque  0.916`
+
+veut dire : quand risque augmente, target a fortement tendance à augmenter.
+
+Et :
+
+- `activite  -0.885`
+
+veut dire : quand activite augmente, target a fortement tendance à diminuer.
+
 ## Résultats
 
-Exemple de sortie de `python3 main2.py` :
+### Sortie de `python3 main.py`
+
+```text
+Dimensions X : (10000, 20)
+Dimensions y : (10000,)
+
+Répartition des classes :
+target
+1    4000
+0    4000
+2    2000
+Name: count, dtype: int64
+
+Scores cross-validation :
+[1.     0.9995 1.     0.9985 0.9995]
+
+Accuracy moyenne CV : 0.9995
+Écart-type CV : 0.0005477225575051464
+
+Accuracy test : 0.999
+
+Classification Report :
+              precision    recall  f1-score   support
+
+           0       1.00      1.00      1.00       800
+           1       1.00      1.00      1.00       800
+           2       1.00      1.00      1.00       400
+
+    accuracy                           1.00      2000
+   macro avg       1.00      1.00      1.00      2000
+weighted avg       1.00      1.00      1.00      2000
+
+
+Matrice de confusion :
+[[800   0   0]
+ [  1 798   1]
+ [  0   0 400]]
+
+Corrélation avec target :
+target          1.000000
+risque          0.916442
+stress          0.830519
+cholesterol     0.754946
+imc             0.752104
+experience      0.598300
+pression        0.597060
+age             0.592656
+nb_enfants      0.584322
+poids           0.457818
+taille         -0.143555
+depenses       -0.351728
+sommeil        -0.590884
+exercice       -0.740145
+revenu         -0.747124
+education      -0.749609
+satisfaction   -0.831475
+bienetre       -0.831849
+alimentation   -0.832196
+sante          -0.873860
+activite       -0.885007
+Name: target, dtype: float64
+```
+
+### Exemple de sortie de `python3 main2.py`
 
 ```text
          age      taille      poids  ...     risque      sante  bienetre
