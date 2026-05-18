@@ -6,11 +6,22 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
+# Chemin par défaut du jeu de données bien-être
+DEFAULT_CSV_PATH = "projet de fin de module 2024-2025/bienetre.csv"
+
 
 def load_data(csv_path, target_col="target"):
+    """
+    Charge le CSV et sépare features (X) et cible (y).
+
+    X ne contient jamais la colonne cible : indispensable pour éviter
+    une fuite de données (le modèle ne doit pas voir target à l'entraînement).
+    """
     df = pd.read_csv(csv_path)
 
+    # X = toutes les colonnes sauf la cible
     X = df.drop(columns=[target_col])
+    # y = variable à prédire
     y = df[target_col]
 
     return df, X, y
@@ -19,8 +30,8 @@ def load_data(csv_path, target_col="target"):
 if __name__ == "__main__":
 
     df, X, y = load_data(
-        csv_path="projet de fin de module 2024-2025/bienetre.csv",
-        target_col="target"
+        csv_path=DEFAULT_CSV_PATH,
+        target_col="target",
     )
 
     print("Dimensions X :", X.shape)
@@ -29,20 +40,21 @@ if __name__ == "__main__":
     print("\nRépartition des classes :")
     print(y.value_counts())
 
+    # Pipeline : normalisation puis KNN (l'ordre compte)
     model = Pipeline([
         ("scaler", StandardScaler()),
         ("knn", KNeighborsClassifier(
             n_neighbors=5,
             p=2,
-            metric="minkowski"
-        ))
+            metric="minkowski",
+        )),
     ])
 
-    # Cross-validation en 5 tranches
+    # Cross-validation stratifiée : chaque fold garde les mêmes proportions de classes
     cv = StratifiedKFold(
         n_splits=5,
         shuffle=True,
-        random_state=42
+        random_state=42,
     )
 
     scores = cross_val_score(
@@ -50,7 +62,7 @@ if __name__ == "__main__":
         X,
         y,
         cv=cv,
-        scoring="accuracy"
+        scoring="accuracy",
     )
 
     print("\nScores cross-validation :")
@@ -59,13 +71,13 @@ if __name__ == "__main__":
     print("\nAccuracy moyenne CV :", scores.mean())
     print("Écart-type CV :", scores.std())
 
-    # Train/test split classique pour rapport détaillé
+    # 80 % train / 20 % test, avec les mêmes proportions de classes qu'avant le split
     X_train, X_test, y_train, y_test = train_test_split(
         X,
         y,
         test_size=0.2,
         random_state=42,
-        stratify=y
+        stratify=y,
     )
 
     model.fit(X_train, y_train)
@@ -80,5 +92,6 @@ if __name__ == "__main__":
     print("\nMatrice de confusion :")
     print(confusion_matrix(y_test, y_pred))
 
+    # Corrélation de chaque feature avec la cible (exploration des données)
     print("\nCorrélation avec target :")
     print(df.corr()["target"].sort_values(ascending=False))

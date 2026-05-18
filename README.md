@@ -1,17 +1,42 @@
 # Pipeline ML propre
 
-Voici un pipeline complet propre pour :
+Projet de classification KNN sur le dataset **bien-être** (`bienetre.csv`), avec pipeline scikit-learn et **6 tests automatisés** (`pytest`).
 
-- charger les données,
-- faire un train_test_split,
-- normaliser,
-- entraîner le KNN,
-- prédire,
-- calculer l’accuracy.
+**Démarrage rapide**
+
+```bash
+source venv/bin/activate
+pip install -r requirements.txt
+python main.py      # entraînement + métriques
+pytest -v           # 6 tests unitaires
+```
 
 ## Sommaire
 
+### Projet
+
+- [Structure du projet](#structure-du-projet)
+- [Installation](#installation)
+
+### Tests (`tests/test_main.py`)
+
+- [Tests automatisés](#tests-automatisés)
+  - [Récapitulatif des 6 tests](#récapitulatif-des-6-tests)
+  - [Lancer les tests](#lancer-les-tests)
+  - [Sortie attendue](#sortie-attendue)
+  - [`test_load_data` — chargement](#test_load_data--chargement-des-données)
+  - [`test_target_not_in_features` — fuite de données](#test_target_not_in_features--target-absente-de-x)
+  - [`test_target_classes` — classes](#test_target_classes--classes-de-la-cible)
+  - [`test_knn_training` — entraînement](#test_knn_training--entraînement-knn)
+  - [`test_prediction_shape` — prédictions](#test_prediction_shape--forme-des-prédictions)
+  - [`test_accuracy` — seuil de performance](#test_accuracy--accuracy-minimale)
+  - [Ce qu'on teste en ML](#ce-quon-teste-en-ml)
+  - [Lien avec `main.py`](#lien-avec-mainpy)
+
+### Pipeline et résultats
+
 - [Explication rapide](#explication-rapide)
+  - [`load_data`](#load_data)
   - [train_test_split](#train_test_split)
   - [StandardScaler](#standardscaler)
   - [KNeighborsClassifier](#kneighborsclassifier)
@@ -23,7 +48,204 @@ Voici un pipeline complet propre pour :
   - [Sortie de `python3 main2.py`](#sortie-de-python3-main2py)
   - [Autre exemple `python3 main.py`](#autre-exemple-python3-mainpy)
 
+## Structure du projet
+
+```text
+machine-learning/
+├── main.py                 # Pipeline KNN + validation croisée
+├── main2.py                # Exemple minimal de chargement
+├── tests/
+│   ├── conftest.py         # Configuration des imports pour pytest
+│   └── test_main.py        # Tests unitaires (pytest)
+├── pytest.ini              # pythonpath pour les imports
+├── requirements.txt        # pandas, scikit-learn, pytest, …
+├── README.md
+├── .vscode/settings.json   # interpréteur Python du venv (optionnel)
+└── projet de fin de module 2024-2025/
+    └── bienetre.csv        # Jeu de données (non versionné)
+```
+
+## Installation
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt   # pandas, scikit-learn, pytest, etc.
+```
+
+Lancer le pipeline :
+
+```bash
+python main.py
+```
+
+## Tests automatisés
+
+Le fichier [`tests/test_main.py`](tests/test_main.py) contient **6 tests** qui valident le pipeline de bout en bout : chargement → features → modèle → prédictions → métrique.
+
+Chaque test importe `load_data` depuis [`main.py`](main.py) (même fonction que le script principal).
+
+### Récapitulatif des 6 tests
+
+| # | Fonction | Vérifie | Assertion clé |
+|---|----------|---------|----------------|
+| 1 | `test_load_data` | CSV, `X`, `y`, dimensions | `X.shape[1] == 20` et `X.shape[0] == y.shape[0]` |
+| 2 | `test_target_not_in_features` | Pas de fuite de données | `"target" not in X.columns` |
+| 3 | `test_target_classes` | Classification 3 classes | `set(y.unique()) == {0, 1, 2}` |
+| 4 | `test_knn_training` | Pipeline s'entraîne | `model.fit(X, y)` sans erreur |
+| 5 | `test_prediction_shape` | Une prédiction par ligne | `len(predictions) == len(y)` |
+| 6 | `test_accuracy` | Performance minimale | `accuracy > 0.8` |
+
+### Lancer les tests
+
+```bash
+# tous les tests, mode verbeux
+pytest -v
+
+# un seul test
+pytest -v tests/test_main.py::test_load_data
+```
+
+Prérequis : le fichier `projet de fin de module 2024-2025/bienetre.csv` doit être présent localement (non versionné sur Git).
+
+### Sortie attendue
+
+```text
+tests/test_main.py::test_load_data PASSED
+tests/test_main.py::test_target_not_in_features PASSED
+tests/test_main.py::test_target_classes PASSED
+tests/test_main.py::test_knn_training PASSED
+tests/test_main.py::test_prediction_shape PASSED
+tests/test_main.py::test_accuracy PASSED
+
+========================= 6 passed =========================
+```
+
+### `test_load_data` — chargement des données
+
+**But :** vérifier que le CSV charge, que `X` et `y` existent, et que les dimensions sont cohérentes.
+
+| Vérification | Détail |
+|--------------|--------|
+| DataFrame | `df is not None` |
+| Alignement | autant de lignes dans `X` que dans `y` |
+| Features | **20 colonnes** dans `X` (sans `target`) |
+
+```python
+def test_load_data():
+    df, X, y = load_data("projet de fin de module 2024-2025/bienetre.csv")
+
+    assert df is not None
+    assert X.shape[0] == y.shape[0]
+    assert X.shape[1] == 20
+```
+
+### `test_target_not_in_features` — target absente de X
+
+**But :** éviter la **fuite de données** (*data leakage*).
+
+Si `target` reste dans `X`, le modèle « triche » en voyant la réponse pendant l'entraînement. L'accuracy serait artificiellement parfaite et inutilisable en production.
+
+```python
+def test_target_not_in_features():
+    _, X, _ = load_data("projet de fin de module 2024-2025/bienetre.csv")
+
+    assert "target" not in X.columns
+```
+
+### `test_target_classes` — classes de la cible
+
+**But :** confirmer une classification à **3 classes** : `0`, `1` et `2`.
+
+Détecte un CSV corrompu, une colonne cible renommée ou des classes inattendues après une mise à jour des données.
+
+```python
+def test_target_classes():
+    _, _, y = load_data("projet de fin de module 2024-2025/bienetre.csv")
+
+    assert set(y.unique()) == {0, 1, 2}
+```
+
+### `test_knn_training` — entraînement KNN
+
+**But :** le pipeline `StandardScaler` + `KNeighborsClassifier` doit s'entraîner **sans erreur**.
+
+Même structure que dans `main.py`, avec les paramètres par défaut de scikit-learn.
+
+```python
+model = Pipeline([
+    ("scaler", StandardScaler()),
+    ("knn", KNeighborsClassifier()),
+])
+model.fit(X, y)
+assert model is not None
+```
+
+### `test_prediction_shape` — forme des prédictions
+
+**But :** chaque ligne de `X` produit **exactement une** prédiction.
+
+Contrôle la cohérence des dimensions en sortie du modèle.
+
+```python
+predictions = model.predict(X)
+assert len(predictions) == len(y)
+```
+
+### `test_accuracy` — accuracy minimale
+
+**But :** garantir un **seuil de performance** (`accuracy > 0.8`).
+
+En production, ce type de test sert de **garde-fou** : si les données changent et dégradent le modèle, la CI échoue avant un déploiement.
+
+```python
+accuracy = accuracy_score(y, predictions)
+assert accuracy > 0.8
+```
+
+> **Note :** ce test entraîne et évalue sur le **même** jeu (`X`). C'est un contrôle de non-régression rapide. Pour mesurer la généralisation, `main.py` utilise `train_test_split` et la validation croisée stratifiée.
+
+### Ce qu'on teste en ML
+
+| Étape | Test(s) associé(s) |
+|--------|---------------------|
+| Chargement des données | `test_load_data` |
+| Preprocessing / pipeline | `test_knn_training` |
+| Shapes (dimensions) | `test_load_data`, `test_prediction_shape` |
+| Absence de fuite (`target` ∉ `X`) | `test_target_not_in_features` |
+| Classes attendues | `test_target_classes` |
+| Entraînement | `test_knn_training` |
+| Prédictions | `test_prediction_shape` |
+| Métriques minimales | `test_accuracy` |
+
+Quand le dataset ou les features évoluent, ces tests cassent **tôt** au lieu de livrer un modèle silencieusement dégradé.
+
+### Lien avec `main.py`
+
+| Composant | `main.py` | Tests |
+|-----------|-----------|-------|
+| Chargement | `load_data()` | tests 1, 2, 3 |
+| Pipeline KNN | `Pipeline([scaler, knn])` | tests 4, 5, 6 |
+| Évaluation réaliste | `cross_val_score`, `train_test_split` | non couvert par les tests (volontairement) |
+
+Les tests couvrent le **socle** ; `main.py` ajoute la validation croisée et les rapports détaillés.
+
 ## Explication rapide
+
+### `load_data`
+
+Fonction centrale du projet (utilisée par `main.py`, `main2.py` et les tests) :
+
+```python
+def load_data(csv_path, target_col="target"):
+    df = pd.read_csv(csv_path)
+    X = df.drop(columns=[target_col])  # features uniquement
+    y = df[target_col]                 # cible
+    return df, X, y
+```
+
+- **`X`** : 20 variables explicatives (âge, stress, activité, etc.)
+- **`y`** : variable à prédire (`target`, classes 0 / 1 / 2)
 
 ### train_test_split
 
