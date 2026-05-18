@@ -1,20 +1,16 @@
 import pandas as pd
 
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score, StratifiedKFold
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 
 def load_data(csv_path, target_col="target"):
-    # Chargement du CSV
     df = pd.read_csv(csv_path)
 
-    # Features
     X = df.drop(columns=[target_col])
-
-    # Variable cible
     y = df[target_col]
 
     return df, X, y
@@ -22,21 +18,17 @@ def load_data(csv_path, target_col="target"):
 
 if __name__ == "__main__":
 
-    # Charger les données
     df, X, y = load_data(
         csv_path="projet de fin de module 2024-2025/bienetre.csv",
         target_col="target"
     )
 
-    # Séparation train / test
-    X_train, X_test, y_train, y_test = train_test_split(
-        X,
-        y,
-        test_size=0.2,
-        random_state=42
-    )
+    print("Dimensions X :", X.shape)
+    print("Dimensions y :", y.shape)
 
-    # Pipeline Machine Learning
+    print("\nRépartition des classes :")
+    print(y.value_counts())
+
     model = Pipeline([
         ("scaler", StandardScaler()),
         ("knn", KNeighborsClassifier(
@@ -46,21 +38,47 @@ if __name__ == "__main__":
         ))
     ])
 
-    # Entraînement du modèle
+    # Cross-validation en 5 tranches
+    cv = StratifiedKFold(
+        n_splits=5,
+        shuffle=True,
+        random_state=42
+    )
+
+    scores = cross_val_score(
+        model,
+        X,
+        y,
+        cv=cv,
+        scoring="accuracy"
+    )
+
+    print("\nScores cross-validation :")
+    print(scores)
+
+    print("\nAccuracy moyenne CV :", scores.mean())
+    print("Écart-type CV :", scores.std())
+
+    # Train/test split classique pour rapport détaillé
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=0.2,
+        random_state=42,
+        stratify=y
+    )
+
     model.fit(X_train, y_train)
 
-    # Prédictions
     y_pred = model.predict(X_test)
 
-    # Accuracy
-    accuracy = accuracy_score(y_test, y_pred)
+    print("\nAccuracy test :", accuracy_score(y_test, y_pred))
 
-    print("Accuracy :", accuracy)
-
-    # Rapport détaillé
     print("\nClassification Report :")
     print(classification_report(y_test, y_pred))
 
-    # Corrélation avec la target
+    print("\nMatrice de confusion :")
+    print(confusion_matrix(y_test, y_pred))
+
     print("\nCorrélation avec target :")
     print(df.corr()["target"].sort_values(ascending=False))

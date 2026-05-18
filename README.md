@@ -17,6 +17,24 @@ Voici un pipeline complet propre pour :
 - `train` = apprentissage,
 - `test` = évaluation.
 
+```python
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.2,
+    random_state=42
+)
+```
+
+Le paramètre :
+
+- `test_size=0.2`
+
+signifie :
+
+- 20% des données → test
+- 80% → entraînement
+
 Ici :
 
 - 80% entraînement,
