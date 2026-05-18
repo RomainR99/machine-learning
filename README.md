@@ -9,6 +9,20 @@ Voici un pipeline complet propre pour :
 - prédire,
 - calculer l’accuracy.
 
+## Sommaire
+
+- [Explication rapide](#explication-rapide)
+  - [train_test_split](#train_test_split)
+  - [StandardScaler](#standardscaler)
+  - [KNeighborsClassifier](#kneighborsclassifier)
+  - [accuracy_score](#accuracy_score)
+  - [classification_report](#classification_report)
+  - [Corrélation](#corrélation)
+- [Résultats](#résultats)
+  - [Sortie de `python3 main.py`](#sortie-de-python3-mainpy)
+  - [Sortie de `python3 main2.py`](#sortie-de-python3-main2py)
+  - [Autre exemple `python3 main.py`](#autre-exemple-python3-mainpy)
+
 ## Explication rapide
 
 ### train_test_split
@@ -185,7 +199,7 @@ activite       -0.885007
 Name: target, dtype: float64
 ```
 
-### Exemple de sortie de `python3 main2.py`
+### Sortie de `python3 main2.py`
 
 ```text
          age      taille      poids  ...     risque      sante  bienetre
@@ -204,7 +218,7 @@ Name: target, dtype: float64
 Name: target, dtype: int64
 ```
 
-Exemple de sortie de `python3 main.py` :
+### Autre exemple `python3 main.py`
 
 ```text
 Accuracy : 1.0
